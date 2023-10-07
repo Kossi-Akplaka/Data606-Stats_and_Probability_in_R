@@ -1,6 +1,6 @@
 ---
 title: 'Foundations for statistical inference - Confidence intervals'
-author: ""
+author: "Kossi Akplaka"
 output:
   pdf_document: default
   html_document:
@@ -92,12 +92,19 @@ samp <- us_adults %>%
     the proportion of those **in this sample** who think climate change affects their 
     local community.
 
-**Insert your answer here**
+```{r sample1-distribution}
+set.seed(1576)
+samp %>% 
+  count(climate_change_affects) %>% 
+  mutate(p_hat = n/sum(n))
+```
 
-1.  Would you expect another student's sample proportion to be identical to yours? 
+In this sample, 55% of the population think that climate change affects their lives
+
+2.  Would you expect another student's sample proportion to be identical to yours? 
     Would you expect it to be similar? Why or why not?
 
-**Insert your answer here**
+No, I wouldn't expect another student's sample distribution to be similar to mine because It is very unlikely that we draw the same sample. Though, I will expect the proportion of people that believe climate change affects their lives to be somewhat similar.
 
 ## Confidence intervals
 
@@ -145,23 +152,23 @@ To recap: even though we don't know what the full population looks like, we're 9
 
 ## Confidence levels
 
-1.  In the interpretation above, we used the phrase "95% confident". What does "95% confidence" mean?
+3.  In the interpretation above, we used the phrase "95% confident". What does "95% confidence" mean?
 
-**Insert your answer here**
+"95% confidence" means that we are 95% confident that the true proportion of US adults who think climate change affects their local community is between 43.3% and 66.7%. 
 
 In this case, you have the rare luxury of knowing the true population proportion (62%) since you have data on the entire population. 
 
-1.  Does your confidence interval capture the true population proportion of US adults 
+4.  Does your confidence interval capture the true population proportion of US adults 
     who think climate change affects their local community? If you are working on this 
     lab in a classroom, does your neighbor's interval capture this value? 
 
-**Insert your answer here**
+Yes, my confidence interval capture the true population proportion.
 
-1.  Each student should have gotten a slightly different confidence interval. What 
+5.  Each student should have gotten a slightly different confidence interval. What 
     proportion of those intervals would you expect to capture the true population 
     mean? Why?
 
-**Insert your answer here**
+I will expect  around 95% of those intervals to capture the true mean of the population because on average, you can expect 95% of your confidence intervals to capture the true population parameter.
 
 In the next part of the lab, you will collect many samples to learn more about how sample proportions and confidence intervals constructed based on those samples vary from one sample to another.
 
@@ -282,32 +289,34 @@ shinyApp(
 ```
 
 
-1.  Given a sample size of 60, 1000 bootstrap samples for each interval, and 50 
+6.  Given a sample size of 60, 1000 bootstrap samples for each interval, and 50 
     confidence intervals constructed (the default values for the above app), what 
     proportion of your confidence intervals include the true population proportion? 
     Is this proportion exactly equal to the confidence level? If not, explain why. 
     Make sure to include your plot in your answer.
 
-**Insert your answer here**
+Given the default values for the app, 48/50 or 96% of my confidence intervals include the true population. My confidence interval is slightly different than the confidence level because each sample and each set of bootstrap samples may yield different results due to random variation. 
+
+
 
 * * *
 
 ## More Practice
 
-1.  Choose a different confidence level than 95%. Would you expect a confidence 
+7.  Choose a different confidence level than 95%. Would you expect a confidence 
     interval at this level to me wider or narrower than the confidence interval 
     you calculated at the 95% confidence level? Explain your reasoning.
 
 **Insert your answer here**
 
-1.  Using code from the **infer** package and data fromt the one sample you have 
+8.  Using code from the **infer** package and data fromt the one sample you have 
     (`samp`), find a confidence interval for the proportion 
     of US Adults who think climate change is affecting their local community with a 
     confidence level of your choosing (other than 95%) and interpret it.
 
 **Insert your answer here**
 
-1.  Using the app, calculate 50 confidence intervals at the confidence level you chose 
+9.  Using the app, calculate 50 confidence intervals at the confidence level you chose 
     in the previous question, and plot all intervals on one plot, and calculate 
     the proportion of intervals that include the true population proportion. 
     How does this percentage compare to the confidence level selected for the 
@@ -315,7 +324,7 @@ shinyApp(
     
 **Insert your answer here**
 
-1.  Lastly, try one more (different) confidence level. First, state how you expect the
+10.  Lastly, try one more (different) confidence level. First, state how you expect the
     width of this interval to compare to previous ones you calculated. Then, 
     calculate the bounds of the interval using the **infer** package and data 
     from `samp` and interpret it. Finally, use the app to generate many intervals 
@@ -324,12 +333,12 @@ shinyApp(
 
 **Insert your answer here**
 
-1.  Using the app, experiment with different sample sizes and comment on how the 
+11.  Using the app, experiment with different sample sizes and comment on how the 
     widths of intervals change as sample size changes (increases and decreases).
     
 **Insert your answer here**
 
-1.  Finally, given a sample size (say, 60), how does the width of the interval change 
+12.  Finally, given a sample size (say, 60), how does the width of the interval change 
     as you increase the number of bootstrap samples. **Hint:** Does changing the 
     number of bootstap samples affect the standard error?
 
