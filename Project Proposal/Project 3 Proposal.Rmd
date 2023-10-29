@@ -1,72 +1,109 @@
 ---
-title: "Lab 1: Intro to R"
-author: "Author Name"
+title: "Project Proposal"
+author: "Kossi Akplaka"
 date: "`r Sys.Date()`"
 output: openintro::lab_report
 ---
 
-```{r load-packages, message=FALSE}
+### Data Preparation
+
+```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
 library(tidyverse)
-library(openintro)
+library(kableExtra)
 ```
 
-### Exercise 1
+Let's load the data in a dataframe
 
-```{r view-girls-counts}
-arbuthnot$girls
+```{r load-data}
+Complaint_data <- read.csv("https://raw.githubusercontent.com/Kossi-Akplaka/Data606-Stats_and_Probability_in_R/main/Project%20Proposal/NYPD_Complaint_Data_Historic.csv")
+
+kable(Complaint_data)
 ```
+Data exploration 
 
-
-### Exercise 2
-
-Insert any text here.
-
-```{r trend-girls}
-# Insert code for Exercise 2 here
-```
-
-
-### Exercise 3
-
-Insert any text here.
-
-```{r plot-prop-boys-arbuthnot}
-# Insert code for Exercise 3 here
+Let's have a glimpse of the data. 
+```{r}
+glimpse(Complaint_data)
 ```
 
 
-### Exercise 4
+We can look up the missing values. As a reminder, the missing values in this data is recorded as (null)
 
-Insert any text here.
+```{r}
+# Look up the missing values
+missing_data <- Complaint_data %>%
+  summarise_all(~ sum(.=="(null)"))
 
-```{r dim-present}
-# Insert code for Exercise 4 here
+kable(missing_data)
+```
+This data frame has a lot of columns. We can drop the column that has a lot of missing values and the columns we are going to use for the analysis
+
+```{r}
+Complaint_data <- Complaint_data %>% 
+  select(- CMPLNT_NUM,  # Unique ID of the records
+         - PARKS_NM,
+         - HADEVELOPT, 
+         - HOUSING_PSA,
+         - STATION_NAME, 
+         -LOC_OF_OCCUR_DESC,
+         - Latitude, - Longitude, - Lat_Lon)  # A lot of missing values
+
+kable(Complaint_data)
 ```
 
 
-### Exercise 5
 
-Insert any text here.
 
-```{r count-compare}
-# Insert code for Exercise 5 here
+### Research question 
+
+- Do law enforcement agencies tend to respond more quickly to reported incidents of "DANGEROUS WEAPONS" compared to "DANGEROUS DRUGS"? 
+
+- Do law enforcement agencies tend to respond more quickly to reported incidents of "DANGEROUS WEAPONS" in Queens Vs Manhattan 
+
+- 
+
+
+
+### Cases 
+
+**What are the cases, and how many are there?**
+
+
+
+### Data collection 
+
+**Describe the method of data collection.**
+
+
+
+### Type of study 
+
+**What type of study is this (observational/experiment)?**
+
+
+
+### Data Source 
+
+**If you collected the data, state self-collected. If not, provide a citation/link.**
+
+
+
+
+### Dependent Variable
+
+**What is the response variable? Is it quantitative or qualitative?**
+
+
+
+### Independent Variable(s)
+
+
+
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+
+```{r}
+
 ```
-
-
-### Exercise 6
-
-Insert any text here.
-
-```{r plot-prop-boys-present}
-# Insert code for Exercise 6 here
-```
-
-
-### Exercise 7
-
-Insert any text here.
-
-```{r find-max-total}
-# Insert code for Exercise 7 here
-```
-
