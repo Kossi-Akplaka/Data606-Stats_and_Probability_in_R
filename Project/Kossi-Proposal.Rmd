@@ -1,0 +1,181 @@
+---
+title: "Project Proposal"
+author: "Kossi Akplaka"
+date: "`r Sys.Date()`"
+output: openintro::lab_report
+---
+
+### Data Preparation
+
+```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyverse)
+```
+
+Let's load the data in a data frame
+
+```{r load-data}
+Complaint_data <- read.csv("https://raw.githubusercontent.com/Kossi-Akplaka/Data606-Stats_and_Probability_in_R/main/Project%20Proposal/NYPD_Complaint_Data_Historic.csv")
+
+```
+
+
+Let's have a glimpse of the data. 
+
+```{r}
+glimpse(Complaint_data)
+```
+
+
+We can look up the missing values. As a reminder, the missing values in this data is recorded as (null)
+
+```{r}
+# Look up the missing values
+missing_data <- Complaint_data %>%
+  summarise_all(~ sum(.=="(null)"))
+
+print(missing_data)
+```
+
+This data frame has a lot of columns. We can drop the column that has a lot of missing values and the columns we are going to use for the analysis
+
+```{r}
+
+Complaint_data <- Complaint_data %>% 
+  select(- CMPLNT_NUM,  # Unique ID of the records
+         - PARKS_NM,
+         - HADEVELOPT, 
+         - HOUSING_PSA,
+         - STATION_NAME, 
+         -LOC_OF_OCCUR_DESC,
+         - Latitude,
+         - Longitude, 
+         - Lat_Lon)  # A lot of missing values
+
+```
+
+
+### Research question 
+
+- Is there on average a significant difference in response time by law enforcement agencies for incidents involving 'DANGEROUS WEAPONS' compared to 'DANGEROUS DRUGS'? 
+
+- Is there on average a significant difference in response time to reported incidents of 'DANGEROUS WEAPONS' between 'Queens' and 'Manhattan'?
+
+### Cases 
+
+Each case correspond to a NYPD Complaint (valid felony, misdemeanor, and violation crimes reported to the NYPD). There are a total of 28,505 cases in this dataset. 
+
+
+
+### Data collection 
+
+This dataset includes all valid felony, misdemeanor, and violation crimes reported to the New York City Police Department (NYPD) from 2006 to the end of last year (2022). The data was found on  https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i
+
+
+The original data has more than 8.3 million complaints. I filtered the data between 1/1/2021 to 12/31/2022.
+
+I've also filtered the offenses description "OFNS_DESC". I was only interested in  DANGEROUS DRUGS and DANGEROUS WEAPONS offenses.
+
+The final data was saved as a CSV file and uploaded to my GitHub: https://raw.githubusercontent.com/Kossi-Akplaka/Data606-Stats_and_Probability_in_R/main/Project%20Proposal/NYPD_Complaint_Data_Historic.csv
+
+
+
+
+### Type of study 
+
+
+This is an observational study.
+
+
+### Data Source 
+
+The data was available online. The data was found on  https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i
+
+
+### Dependent Variable
+
+The response variable represents the Response Time (minutes) and it is quantitative. 
+
+
+### Independent Variable(s)
+
+Question 1: The independent variables are the category of the reported crime, which can be "DANGEROUS WEAPONS" or "DANGEROUS DRUGS" and it is categorical. 
+
+Question 2: Location (Categorical) - "QUEENS" and "MANHATTAN", Type of Crime (Categorical) - 'DANGEROUS WEAPONS' 
+
+
+### Relevant summary statistics 
+
+Create a new column called "response_time" which is the difference between the time NYPD came vs Exact time of occurrence for the reported event 
+
+```{r}
+Complaint_data <- Complaint_data %>%
+  mutate(CMPLNT_FR_TM = as.POSIXlt(CMPLNT_FR_TM, format = "%H:%M:%S"),
+         CMPLNT_TO_TM = as.POSIXlt(CMPLNT_TO_TM, format = "%H:%M:%S"))
+
+
+Complaint_data <- Complaint_data %>%
+  mutate(response_time = difftime(CMPLNT_TO_TM, CMPLNT_FR_TM, units = "mins"))
+
+head(Complaint_data$response_time)
+```
+
+Let's plot the distribution of the response time for 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS' side by side.
+
+```{r message=FALSE, warning=FALSE}
+
+# Let's clean the data to remove the NA in the column response time( some of the rows in the data didn't have time)
+
+Clean_data <- Complaint_data %>% 
+  filter(response_time != 'NA mins')
+
+# Now we can plot the clean data
+ggplot(Clean_data, aes(x = as.numeric(response_time))) +
+  geom_histogram(bins = 200) +
+  labs(
+    title = "Distribution of Response Times by Category",
+    x = "Response Time (minutes)",
+    y = "Frequency"
+  ) +
+  xlim(0, 200) +
+  facet_wrap(~OFNS_DESC, ncol = 2)
+
+```
+
+
+Let's plot the distribution of the response time for 'DANGEROUS WEAPONS' for 'QUEENS'.
+
+```{r warning=FALSE}
+
+# Filter the data for 'DANGEROUS WEAPONS' in 'QUEENS'
+filtered_data <- Clean_data %>%
+  filter(OFNS_DESC == 'DANGEROUS WEAPONS' & (BORO_NM == 'QUEENS'))
+
+# Create a histogram of response times for 'DANGEROUS WEAPONS' in 'QUEENS'
+ggplot(filtered_data, aes(x = as.numeric(response_time))) +
+  geom_histogram(bins = 200) +
+  labs(
+    title = "Distribution of Response Times for 'DANGEROUS WEAPONS' in QUEENS",
+    x = "Response Time (minutes)",
+    y = "Frequency"
+  ) +
+  xlim(0, 200)
+```
+
+Let's plot the distribution of the response time for 'DANGEROUS WEAPONS' for 'MANHATTAN'.
+
+```{r warning=FALSE}
+# Filter the data for 'DANGEROUS WEAPONS' in 'MANHATTAN'
+filtered_data <- Clean_data %>%
+  filter(OFNS_DESC == 'DANGEROUS WEAPONS' & (BORO_NM == 'MANHATTAN'))
+
+# Create a histogram of response times for 'DANGEROUS WEAPONS' in 'QUEENS'
+ggplot(filtered_data, aes(x = as.numeric(response_time))) +
+  geom_histogram(bins = 200) +
+  labs(
+    title = "Distribution of Response Times for 'DANGEROUS WEAPONS' in MANHATTAN",
+    x = "Response Time (minutes)",
+    y = "Frequency"
+  ) +
+  xlim(0, 200)
+```
