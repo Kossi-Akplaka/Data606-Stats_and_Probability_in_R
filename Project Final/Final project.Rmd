@@ -1,0 +1,336 @@
+---
+title: "DATA 606 Final Project"
+author: "Kossi Akplaka"
+date: "`r Sys.Date()`"
+output: openintro::lab_report
+---
+
+## Abstract 
+In this project, I conducted a thorough analysis of reported crimes from the New York Police Department dataset (2006-2022), focusing on offenses related to dangerous drugs and weapons. After filtering the data to include incidents reported between January 1, 2021, and December 31, 2022, and refining it to only include "DANGEROUS DRUGS" and "DANGEROUS WEAPONS," the dataset was made publicly available on GitHub.
+
+The analysis addressed two key research questions. Firstly, it investigated whether there is a significant difference in average response times for incidents involving 'DANGEROUS WEAPONS' compared to 'DANGEROUS DRUGS.' The results, supported by summary statistics and a two-sample t-test, revealed a statistically significant difference, emphasizing the importance of tailored law enforcement strategies for distinct offense categories.
+
+The second question explored potential variations in the average response time for reported 'DANGEROUS WEAPONS' incidents between Queens and Manhattan. Despite visualizations and summary statistics suggesting differences, the statistical test did not find a significant distinction, providing nuanced insights into law enforcement responsiveness across boroughs.
+
+While these findings are valuable, it's crucial to acknowledge the study's limitations. Potential biases from external factors and the limited temporal scope (2021-2022) underscore the need for cautious interpretation.
+
+In conclusion, this analysis contributes to our understanding of law enforcement dynamics, highlighting the significance of tailored strategies for different offense types. The results provide actionable insights for resource allocation and policy decisions, fostering a data-driven approach to enhance public safety.
+
+## Import libraries
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+## Overview slide
+In the overview slide, I'll go over the context of the data collection, the description of the independent and dependent variables and state the research question for this project.
+
+### Context on the data collection
+The [dataset]("https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i") represents reported felony, misdemeanor, and violation crimes documented by the New York Police Department (NYPD) from 2006 to 2022.
+
+The original dataset has over 8.3 millions complaints. To narrow the focus, the data was filtered to only include incidents reported between January 1, 2021 to December 31, 2022.
+
+Further the data was filtered to only include offenses falling under the categories of "DANGEROUS DRUGS" and "DANGEROUS WEAPONS," as denoted by the "OFNS_DESC" (Offense Description) variable. 
+
+The aim is to concentrate the analysis on crimes related to *dangerous drugs* and *dangerous weapons* during the specified time frame.
+
+The final dataset was saved as a CSV file and made publicly available on [GitHub]("https://raw.githubusercontent.com/Kossi-Akplaka/Data606-Stats_and_Probability_in_R/main/Project/NYPD_Complaint_Data_Historic.csv").
+
+### Description of the dependent variable (what is being measured)
+The dependent variable represents the response time in minutes, representing the gap between the *exact time of occurrence for the reported event* (Variable CMPLNT_FR_TM) and the *ending time of occurrence* (Variable CMPLNT_TO_TM). 
+
+This duration is calculated as the difference between the exact start time and end time of the reported event.
+
+### Description of the independent variable (what is being measured; include at least 2 variables)
+
+The independent variable represent OFNS_DESC (Offense description) which is categorical and was filtered to only include "DANGEROUS WEAPONS" and "DANGEROUS DRUGS".
+
+The independent variable for another research question is the Location (Categorical).
+
+### Research question
+The goal of this project is to answer two research question:
+
+- Question 1: Is there on average a significant difference in response time by law enforcement agencies for incidents involving 'DANGEROUS WEAPONS' compared to 'DANGEROUS DRUGS'? 
+
+- Question 2: Is there on average a significant difference in response time to reported incidents of 'DANGEROUS WEAPONS' between 'Queens' and 'Manhattan'?
+
+## Import the data
+Import the data from GitHub
+```{r}
+Complaint_data <- read.csv("https://raw.githubusercontent.com/Kossi-Akplaka/Data606-Stats_and_Probability_in_R/main/Project/NYPD_Complaint_Data_Historic.csv")
+
+Complaint_data %>% 
+  summarize(row = nrow(.),
+            col = ncol(.))
+```
+The dataset has 28504 coomplains and 40 columns
+
+## Answer Research question 1
+This part of the project will answer the first research question by using the appropriate test statistic.
+
+### Summary statistics
+Create a new column called “response_time” which is the difference between the time NYPD came vs Exact
+time of occurrence for the reported event
+
+```{r}
+# Format the variable into time format
+Complaint_data <- Complaint_data %>%
+  mutate(CMPLNT_FR_TM = as.POSIXlt(CMPLNT_FR_TM, format = "%H:%M:%S"),
+         CMPLNT_TO_TM = as.POSIXlt(CMPLNT_TO_TM, format = "%H:%M:%S"))
+# Take the difference between the two column to find the response time
+Complaint_data <- Complaint_data %>%
+  mutate(response_time = difftime(CMPLNT_TO_TM, CMPLNT_FR_TM, units = "mins"))
+#Print the first 5 response times
+head(Complaint_data$response_time)
+
+```
+
+Select the columns we are going to answer the first research question.
+
+```{r}
+Complaint_df1 <- Complaint_data %>% 
+  select(response_time,
+         OFNS_DESC,
+         PD_DESC,
+         BORO_NM,
+         SUSP_RACE,
+         VIC_RACE)
+```
+
+Glimpse of the refined data
+```{r}
+glimpse(Complaint_df1)
+```
+
+Count the numbers of complaints in the offense description 
+```{r}
+table(Complaint_df1$OFNS_DESC)
+```
+There are 16304 calls related to drugs and 12,200 calls related to dangerous weapons.
+
+Find the missing values in the variable 
+```{r}
+colSums(is.na(Complaint_df1))
+
+```
+
+We can drop the missing values in the response time variable since more than 10% of the data are missing.
+
+```{r}
+Complaint_df1 <- Complaint_df1 %>% 
+  filter(!is.na(response_time) & response_time >= 0)
+
+Complaint_df1 %>% 
+  summarize(row = nrow(.),
+            col = ncol(.))
+```
+Summary statistics for 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS'
+
+```{r}
+Complaint_df1 %>% 
+  group_by(OFNS_DESC) %>% 
+  summarise(mean = mean(response_time),
+            median = median(response_time),
+            IQR = IQR(response_time),
+            stdev = sd(response_time))
+```
+
+The average response time for offenses related to "DANGEROUS DRUGS" is higher than "DANGEROUS WEAPONS".
+
+### Include appropriate data visualizations.
+Create a box plot of the response time for each category of the offense description variable.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(Complaint_df1, aes(x = OFNS_DESC, y = response_time)) +
+  geom_boxplot(color = "darkblue") +
+  labs(title = "Boxplot of Response Time by Offense Description",
+       x = "Offense Description",
+       y = "Response Time (Minutes)")
+```
+
+Based on the summary statistics, the middle 50% of the response time values for incidents involving 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS' falls within a range of 7 to 13 minutes. It makes the box collapse and looks line instead of a box.
+
+
+Include a histogram of the response time 
+```{r message=FALSE}
+ggplot(Complaint_df1, aes(x = response_time)) +
+  geom_histogram(bins = 200) +
+  labs(
+    title = "Distribution of Response Times by Category",
+    x = "Response Time (minutes)",
+    y = "Frequency"
+  ) +
+  coord_cartesian(xlim = c(0, 200)) +
+  facet_wrap(~OFNS_DESC, ncol = 2)
+
+
+```
+
+Both distribution follow a normal distribution skewed to the right.
+
+### Statistical output
+Based on the summary statistics, The average response time for offenses related to "DANGEROUS DRUGS" is higher than "DANGEROUS WEAPONS". Are the averages *close enough* to conclude that there is no difference? Or are the average too different to make this conclusion?
+
+- Null Hypothesis: There is no significant difference in average response time between incidents involving 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS'.
+
+- Alternative Hypothesis: There is a significant difference in average response time between incidents involving 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS'.
+
+The appropriate test statistic for comparing the average response time between incidents involving 'DANGEROUS WEAPONS' and 'DANGEROUS DRUGS' is the *two-sample t-test*.
+
+### The Two-Sample t-test
+The *two-sample t-test*  is a method used to test whether the population means of two groups are equal or not.
+
+
+- Independence: The response time of complains related to 'DANGEROUS WEAPONS' doesn't depend on the response time of complains related to 'DANGEROUS DRUGS'
+
+- Random sample: we assume that the NYPD complains were random
+
+- The data of the two groups are normally distributed.
+
+Now that the assumptions are satisfies, we can perform the test statistic. Note that R by default computes the Welch t-test(instead of the Student's t-test) which do not assume that the variance is equal between the two groups.
+
+```{r}
+res <- t.test(response_time ~ OFNS_DESC, data = Complaint_df1)
+res
+```
+The result above shows that the t-test statistic value is -12.349 mins, the degree of freedom is 18794, the p-value is less than 0.05 and the confidence interval is between -9.446629 mins and -6.858627 mins.
+
+### Conclusion
+The p-value of the test is 2.2e-16, which is less than the significance level alpha = 0.05. We can conclude that the average response time is significantly different from offenses related to DANGEROUS DRUGS and DANGEROUS WEAPONS 
+
+
+## Answer Research question 2
+This part of the project will answer the second research question by using the appropriate test statistic.
+
+### Summary statistics
+
+Select the columns we are going to answer the second research question.
+
+```{r}
+Complaint_df2 <- Complaint_data %>% 
+  select(response_time,
+         OFNS_DESC,
+         PD_DESC,
+         BORO_NM,
+         SUSP_RACE,
+         VIC_RACE)
+```
+
+Filter the data to only include offenses related to dangerous weapons in Queens and Manhattan
+```{r}
+Complaint_df2 <- Complaint_df2 %>%
+  filter(OFNS_DESC == 'DANGEROUS WEAPONS' & (BORO_NM == 'QUEENS' | BORO_NM == 'MANHATTAN'))
+
+Complaint_df2 %>% 
+  summarise(rows = nrow(.))
+```
+We have a total of 4540 complains related to dangerous weapons in queens and Manhattan.
+
+Glimpse of the refined data
+```{r}
+glimpse(Complaint_df2)
+```
+
+Count the numbers of complaints in the different boroughs
+```{r}
+table(Complaint_df2$BORO_NM)
+```
+There are 2181 complains in Manhattan and 2359 complains in Queens related to dangerous weapons.
+
+Find the missing values in the variable 
+```{r}
+colSums(is.na(Complaint_df2))
+```
+
+We can drop the missing values in the response time variable since more than 10% of the data are missing.
+
+```{r}
+Complaint_df2 <- Complaint_df2 %>% 
+  filter(!is.na(response_time) & response_time >= 0)
+
+Complaint_df2 %>% 
+  summarize(row = nrow(.))
+```
+Summary statistics for 'DANGEROUS WEAPONS' in Manhattan and Queens
+
+```{r}
+Complaint_df2 %>% 
+  group_by(BORO_NM) %>% 
+  summarise(mean = mean(response_time),
+            median = median(response_time),
+            IQR = IQR(response_time),
+            stdev = sd(response_time))
+```
+
+The average response time for offenses related to "DANGEROUS WEAPONS" in Manhattan is slightly lower than Queens.
+
+### Include appropriate data visualizations.
+Create a box plot of the response time for each category of the offense description variable.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(Complaint_df2, aes(x = BORO_NM, y = response_time)) +
+  geom_boxplot(color = "darkblue") +
+  labs(title = "Boxplot of Response Time by Borough Name",
+       x = "Borough name",
+       y = "Response Time (Minutes)")
+```
+
+Based on the summary statistics, the middle 50% of the response time values for incidents involving 'DANGEROUS WEAPONS' in Queens and Manahttan falls within a range of 14 to 19 minutes. It makes the box collapse and looks line instead of a box.
+
+
+Include a histogram of the response time 
+```{r message=FALSE}
+ggplot(Complaint_df2, aes(x = response_time)) +
+  geom_histogram(bins = 200) +
+  labs(
+    title = "Distribution of Response Times by Borough Name",
+    x = "Response Time (minutes)",
+    y = "Frequency"
+  ) +
+  coord_cartesian(xlim = c(0, 200)) +
+  facet_wrap(~BORO_NM, ncol = 2)
+```
+
+Both distribution follow a normal distribution skewed to the right.
+
+### Statistical output
+Based on the summary statistics, The average response time for offenses related to "DANGEROUS WEAPONS" in Manhattan in slightly lower than Queens. Are the averages *close enough* to conclude that there is no difference? Or are the average too different to make this conclusion?
+
+- Null Hypothesis: There is no significant difference in average response time between incidents involving 'DANGEROUS WEAPONS' in Queens and Manhattan
+
+- Alternative Hypothesis: There is a significant difference in average response time between incidents involving 'DANGEROUS WEAPONS' in Queens and Manhattan.
+
+The appropriate test statistic for comparing the average response time between incidents involving 'DANGEROUS WEAPONS' in Queens and Manhattan is the *two-sample t-test*.
+
+### The Two-Sample t-test
+
+
+```{r}
+res <- t.test(response_time ~ BORO_NM, data = Complaint_df2)
+res
+```
+The result above shows that the t-test statistic value is -0.48822 mins, the degree of freedom is 3836.2, the p-value is greater than 0.05 and the confidence interval is between -4.754285 mins and -2.858565 mins.
+
+### Conclusion
+The p-value of the test is 0.6254, which is greater than the significance level alpha = 0.05. We failed to reject the null hypothesis. We can conclude that we are 95% confident that the average response time related to DANGEROUS WEAPONS in Queens and Manhattan is not significantly different.
+
+
+
+## Why is this analysis important?
+Analyzing response times for offenses involving dangerous drugs and weapons is crucial for law enforcement resource allocation, public safety, and policy development. 
+
+## Limitations of the analysis?
+Limitations include potential data bias from external factors like weather impacting results, challenges in inferring causation, and a limited temporal scope (2021-2022) restricting broader applicability to evolving crime trends or law enforcement practices.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
